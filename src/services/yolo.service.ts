@@ -26,11 +26,11 @@ export class YoloService {
   }
 
   async detectAflatoxin(imageBase64: string): Promise<YoloDetection> {
-    if (!this.modelLoaded || !this.session) {
-      await this.loadModel();
-    }
-
     try {
+      if (!this.modelLoaded || !this.session) {
+        await this.loadModel();
+      }
+
       // Convert base64 to image element
       const img = await this.loadImage(imageBase64);
       
@@ -46,8 +46,8 @@ export class YoloService {
       
       return detection;
     } catch (error) {
-      console.error('Error during YOLO detection:', error);
-      // Fallback to random simulation if model fails
+      console.error('Error during YOLO detection (using fallback):', error);
+      // Fallback to random simulation if model fails or not supported
       return this.simulateDetection();
     }
   }
