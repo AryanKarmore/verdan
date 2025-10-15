@@ -10,6 +10,7 @@ import { t } from '@/lib/i18n';
 import { yoloService } from '@/services/yolo.service';
 import { aflatoxinRiskService } from '@/services/aflatoxin-risk.service';
 import { apiService } from '@/services/api.service';
+import { geolocationService } from '@/services/geolocation.service';
 import { useToast } from '@/hooks/use-toast';
 
 const BuyerScan = () => {
@@ -23,6 +24,9 @@ const BuyerScan = () => {
     storage: '',
     transport: ''
   });
+  const [envTemperature, setEnvTemperature] = useState<number | undefined>(undefined);
+  const [envHumidity, setEnvHumidity] = useState<number | undefined>(undefined);
+  const [moisture, setMoisture] = useState<number | undefined>(undefined);
 
   const capture = () => {
     const imageSrc = webcamRef.current?.getScreenshot();
@@ -35,6 +39,42 @@ const BuyerScan = () => {
 
   const handleAnswerChange = (question: string, value: string) => {
     setAnswers(prev => ({ ...prev, [question]: value }));
+  };
+
+  const handleFetchWeather = async () => {
+    try {
+      const location = await geolocationService.getCurrentLocation();
+      const data = await apiService.fetchWeatherData(location);
+      setEnvTemperature(data.temperature);
+      setEnvHumidity(data.humidity);
+      toast({
+        title: 'Weather captured',
+        description: `Temp ${data.temperature.toFixed(1)}°C, Humidity ${Math.round(data.humidity)}%`
+      });
+    } catch (error) {
+      toast({
+        title: 'Weather capture failed',
+        description: 'Unable to fetch weather. Please allow location permissions and try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCaptureMoisture = async () => {
+    const input = prompt('Enter grain moisture percentage (0-100):');
+    if (input === null) return;
+    const value = Number(input);
+    if (Number.isFinite(value) && value >= 0 && value <= 100) {
+      const rounded = Math.round(value * 10) / 10;
+      setMoisture(rounded);
+      toast({ title: 'Moisture set', description: `Moisture ${rounded}%` });
+    } else {
+      toast({
+        title: 'Invalid value',
+        description: 'Please enter a number between 0 and 100',
+        variant: 'destructive'
+      });
+    }
   };
 
   const analyzeRisk = async () => {
@@ -61,28 +101,32 @@ const BuyerScan = () => {
       console.log('YOLO Detection Results:', detection);
 
       // Step 2: Get weather data for temperature and humidity
-      let temperature: number | undefined;
-      let humidity: number | undefined;
+      let temperature: number | undefined = envTemperature;
+      let humidity: number | undefined = envHumidity;
 
-      try {
-        // Try to get user's location
-        if (navigator.geolocation) {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
-          });
+      if (temperature === undefined || humidity === undefined) {
+        try {
+          // Try to get user's location
+          if (navigator.geolocation) {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
 
-          const weatherData = await apiService.fetchWeatherData({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: Date.now()
-          });
+            const weatherData = await apiService.fetchWeatherData({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              timestamp: Date.now()
+            });
 
-          temperature = weatherData.temperature;
-          humidity = weatherData.humidity;
+            temperature = weatherData.temperature;
+            humidity = weatherData.humidity;
+            setEnvTemperature(temperature);
+            setEnvHumidity(humidity);
+          }
+        } catch (error) {
+          console.log('Could not fetch weather data, continuing without it:', error);
         }
-      } catch (error) {
-        console.log('Could not fetch weather data, continuing without it:', error);
       }
 
       // Step 3: Calculate risk using the formula
@@ -91,6 +135,7 @@ const BuyerScan = () => {
         aflatoxinCount: detection.aflatoxinCount,
         transport: answers.transport,
         storage: answers.storage,
+        moisture,
         temperature,
         humidity
       });
@@ -108,7 +153,7 @@ const BuyerScan = () => {
           image: capturedImage,
           answers,
           detection: riskResult.detectionDetails,
-          environmental: { temperature, humidity }
+          environmental: { temperature, humidity, moisture }
         }
       };
 
@@ -242,6 +287,26 @@ const BuyerScan = () => {
                         <Label htmlFor="open-truck">{t('scan.openTruck', 'Open truck (Bad)')}</Label>
                       </div>
                     </RadioGroup>
+                  </div>
+                </div>
+
+                {/* Environment capture */}
+                <div className="space-y-3 pt-2">
+                  <Label className="text-base font-medium">Environment</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={handleFetchWeather}>Fetch Weather (Temp & Humidity)</Button>
+                    <Button variant="outline" onClick={handleCaptureMoisture}>Add Moisture %</Button>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {(envTemperature !== undefined || envHumidity !== undefined || moisture !== undefined) ? (
+                      <div className="flex flex-wrap gap-3">
+                        {envTemperature !== undefined && <span>Temperature: {envTemperature.toFixed(1)}°C</span>}
+                        {envHumidity !== undefined && <span>Humidity: {envHumidity.toFixed(0)}%</span>}
+                        {moisture !== undefined && <span>Moisture: {moisture.toFixed(1)}%</span>}
+                      </div>
+                    ) : (
+                      <span>No environment data captured yet</span>
+                    )}
                   </div>
                 </div>
 

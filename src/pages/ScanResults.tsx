@@ -29,6 +29,7 @@ interface ScanResult {
     environmental?: {
       temperature?: number;
       humidity?: number;
+      moisture?: number;
     };
   };
 }
@@ -202,6 +203,15 @@ const ScanResults = () => {
                     <div>
                       <div className="text-2xl font-bold">{environmental.humidity.toFixed(0)}%</div>
                       <div className="text-sm text-muted-foreground">Humidity</div>
+                    </div>
+                  </div>
+                )}
+                {environmental.moisture !== undefined && (
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <Droplets className="w-6 h-6 text-teal-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{environmental.moisture.toFixed(1)}%</div>
+                      <div className="text-sm text-muted-foreground">Moisture</div>
                     </div>
                   </div>
                 )}
