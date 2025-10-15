@@ -680,9 +680,12 @@ const BuyerDashboard = () => {
             <CardTitle className="text-2xl mb-3">Corn Quality Assessment</CardTitle>
             <p className="text-muted-foreground text-lg">AI-powered quality analysis</p>
           </CardHeader>
-          <CardContent className="text-center pb-8">
-            <Button size="lg" className="w-full h-14 text-lg font-medium">
+          <CardContent className="text-center pb-8 space-y-3">
+            <Button size="lg" className="w-full h-14 text-lg font-medium" onClick={() => setCurrentView('scan')}>
               Start Assessment
+            </Button>
+            <Button size="lg" variant="outline" className="w-full h-14 text-lg font-medium" onClick={() => navigate('/buyer-scan')}>
+              AI Aflatoxin Scan (with Score)
             </Button>
           </CardContent>
         </Card>
