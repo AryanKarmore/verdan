@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ttsService } from '@/lib/tts';
+import { useVoiceChat } from '@/hooks/useVoiceChat';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Bot, 
   Send, 
@@ -34,11 +34,11 @@ const AIAssistant = () => {
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [language, setLanguage] = useState('en');
+  const { isRecording, isProcessing, startRecording, stopRecording, speakText } = useVoiceChat();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,6 +55,94 @@ const AIAssistant = () => {
     "How to identify pest damage?"
   ];
 
+  const streamChat = async (userMessage: string) => {
+    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agricultural-chat`;
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: [
+            ...messages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: userMessage }
+          ],
+          language
+        }),
+      });
+
+      if (!resp.ok) {
+        if (resp.status === 429) {
+          toast({ title: 'Rate Limit', description: 'Too many requests. Please wait.', variant: 'destructive' });
+          return;
+        }
+        if (resp.status === 402) {
+          toast({ title: 'Service Unavailable', description: 'Please add credits to enable AI.', variant: 'destructive' });
+          return;
+        }
+        throw new Error('Failed to start stream');
+      }
+      if (!resp.body) throw new Error('No response body');
+
+      // Create placeholder assistant message
+      const assistantId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', timestamp: new Date() }]);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let streamDone = false;
+      let assistantContent = '';
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const newMessages = [...prev];
+                const lastIdx = newMessages.findIndex(m => m.id === assistantId);
+                if (lastIdx !== -1) {
+                  newMessages[lastIdx] = { ...newMessages[lastIdx], content: assistantContent };
+                }
+                return newMessages;
+              });
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({ title: 'Error', description: 'Failed to get AI response. Please try again.', variant: 'destructive' });
+      // Remove placeholder assistant if exists
+      setMessages(prev => prev[prev.length - 1]?.role === 'assistant' && prev[prev.length - 1]?.content === '' ? prev.slice(0, -1) : prev);
+    }
+  };
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
 
@@ -70,100 +158,26 @@ const AIAssistant = () => {
     setIsLoading(true);
 
     try {
-      // Simulate AI response - In production, this would call OpenAI or similar
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const responses = [
-        "Based on your question about maize planting, the optimal time is usually at the beginning of the rainy season. For Kenya, this is typically March-May for long rains and October-December for short rains.",
-        "To prevent aflatoxin contamination: 1) Ensure proper drying (moisture below 14%), 2) Store in clean, dry conditions, 3) Use aflatoxin-resistant varieties, 4) Avoid physical damage during harvest.",
-        "For maize cultivation, I recommend a balanced NPK fertilizer (e.g., 23:23:0) at planting, followed by nitrogen top-dressing at 6-8 weeks. Organic compost also improves soil health.",
-        "Common pest damage signs include: 1) Holes in leaves (army worms), 2) Tunnels in stalks (stem borers), 3) Chewed ears (weevils), 4) Wilting plants (root damage). Early detection is key!"
-      ];
-
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiResponse]);
-
-      // Optional: Speak the response
-      await ttsService.speak(aiResponse.content, 'en');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
-        variant: "destructive",
-      });
+      await streamChat(content.trim());
     } finally {
       setIsLoading(false);
     }
   };
 
-  const startVoiceInput = async () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast({
-        title: "Not Supported",
-        description: "Voice input is not supported in this browser.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      setIsListening(true);
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setInputMessage(transcript);
-        setIsListening(false);
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        toast({
-          title: "Voice Input Error",
-          description: "Could not recognize speech. Please try again.",
-          variant: "destructive",
-        });
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
-    } catch (error) {
-      console.error('Voice input error:', error);
-      setIsListening(false);
+  const handleVoiceInput = async () => {
+    if (isRecording) {
+      const transcript = await stopRecording(language);
+      if (transcript) setInputMessage(transcript);
+    } else {
+      await startRecording();
     }
   };
 
   const handleSpeak = async (text: string) => {
-    if (isSpeaking) {
-      ttsService.stop();
-      setIsSpeaking(false);
-      return;
-    }
-
-    setIsSpeaking(true);
     try {
-      await ttsService.speak(text, 'en');
+      await speakText(text);
     } catch (error) {
       console.error('TTS error:', error);
-    } finally {
-      setIsSpeaking(false);
     }
   };
 
@@ -171,7 +185,7 @@ const AIAssistant = () => {
     <div className="space-y-4">
       {/* AI Assistant Header */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-2">
           <CardTitle className="flex items-center gap-2">
             <Bot className="w-5 h-5 text-primary" />
             AI Agricultural Assistant
@@ -180,6 +194,18 @@ const AIAssistant = () => {
               Smart
             </Badge>
           </CardTitle>
+          <div className="flex justify-end">
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="sw">Swahili</SelectItem>
+                <SelectItem value="ki">Kikuyu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
       </Card>
 
@@ -267,13 +293,13 @@ const AIAssistant = () => {
               className="flex-1"
             />
             <Button
-              variant="outline"
+              variant={isRecording ? 'destructive' : 'outline'}
               size="sm"
-              onClick={startVoiceInput}
-              disabled={isListening}
+              onClick={handleVoiceInput}
+              disabled={isProcessing || isLoading}
               className="hover:scale-105 transition-transform"
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
             <Button
               onClick={() => sendMessage(inputMessage)}
