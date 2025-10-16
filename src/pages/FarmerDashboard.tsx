@@ -101,16 +101,16 @@ const FarmerDashboard = () => {
   const handleResourceClick = (resource: string) => {
     switch (resource) {
       case 'training':
-        alert('Training Materials:\n• Best practices for aflatoxin prevention\n• Proper storage techniques\n• Crop rotation strategies\n• Post-harvest handling guidelines');
+        navigate('/training');
         break;
       case 'market':
-        alert('Market Information:\n• Current corn prices: $180/ton\n• Quality premiums available\n• Certified buyer network\n• Export opportunities');
+        navigate('/market-info');
         break;
       case 'support':
-        alert('Technical Support:\n• 24/7 helpline: +254-700-FARM\n• Field officer visits\n• WhatsApp support group\n• Online consultation booking');
+        navigate('/support');
         break;
       case 'finance':
-        alert('Financial Services:\n• Crop insurance programs\n• Microfinance options\n• Equipment financing\n• Government subsidies information');
+        navigate('/finance');
         break;
     }
   };

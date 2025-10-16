@@ -26,6 +26,10 @@ import UpgradePlan from "./pages/UpgradePlan";
 import Chat from "./pages/Chat";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import TrainingMaterials from "./pages/TrainingMaterials";
+import MarketInfo from "./pages/MarketInfo";
+import TechnicalSupport from "./pages/TechnicalSupport";
+import FinancialServices from "./pages/FinancialServices";
 import AdBanner from "./components/AdBanner";
 import AuthGuard from "./components/AuthGuard";
 import { MobileBottomNav } from "./components/MobileBottomNav";
@@ -66,6 +70,10 @@ const AppContent = () => {
           <Route path="/upgrade" element={<UpgradePlan />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/training" element={<TrainingMaterials />} />
+          <Route path="/market-info" element={<MarketInfo />} />
+          <Route path="/support" element={<TechnicalSupport />} />
+          <Route path="/finance" element={<FinancialServices />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <MobileBottomNav />
