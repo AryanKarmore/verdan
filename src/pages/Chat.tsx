@@ -118,6 +118,11 @@ const Chat = () => {
           }
         }
       }
+
+      // Speak the complete response after streaming is done
+      if (assistantMessage) {
+        await speakText(assistantMessage);
+      }
     } catch (error) {
       console.error('Chat error:', error);
       toast({
@@ -157,15 +162,15 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex flex-col">
-      <div className="flex items-center gap-4 p-4 bg-card border-b">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex flex-col pb-20">
+      <div className="sticky top-0 z-10 flex items-center gap-2 md:gap-4 p-3 md:p-4 bg-card border-b shadow-sm">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-xl font-bold text-primary">AI Agricultural Assistant</h1>
+        <h1 className="text-base md:text-xl font-bold text-primary truncate flex-1">AI Agricultural Assistant</h1>
         
         <Select value={language} onValueChange={setLanguage}>
-          <SelectTrigger className="w-32 ml-auto">
+          <SelectTrigger className="w-20 md:w-32 text-xs md:text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -176,44 +181,44 @@ const Chat = () => {
         </Select>
       </div>
 
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+      <div className="flex-1 p-3 md:p-4 space-y-3 md:space-y-4 overflow-y-auto pb-4">
         {messages.map((msg, index) => (
           <Card 
             key={index} 
-            className={`animate-fade-in ${msg.role === 'assistant' ? 'bg-primary/5' : 'bg-accent/5 ml-8'}`} 
+            className={`animate-fade-in ${msg.role === 'assistant' ? 'bg-primary/5 mr-8' : 'bg-accent/5 ml-8'}`} 
             style={{ animationDelay: `${index * 0.1}s` }}
           >
-            <CardContent className="p-3">
+            <CardContent className="p-2 md:p-3">
               <div className="flex items-start gap-2">
                 {msg.role === 'assistant' && (
                   <>
-                    <Bot className="w-4 h-4 mt-1 text-primary animate-float" />
-                    <div className="flex-1">
-                      <p className="text-sm">{msg.content}</p>
+                    <Bot className="w-4 h-4 mt-1 text-primary animate-float shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm break-words">{msg.content}</p>
                     </div>
                     {msg.content && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => handleSpeak(msg.content)}
-                        className="ml-2"
+                        className="ml-2 shrink-0 h-7 w-7 p-0"
                       >
-                        <Volume2 className="w-4 h-4" />
+                        <Volume2 className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     )}
                   </>
                 )}
-                {msg.role === 'user' && <p className="text-sm">{msg.content}</p>}
+                {msg.role === 'user' && <p className="text-xs md:text-sm break-words">{msg.content}</p>}
               </div>
             </CardContent>
           </Card>
         ))}
         {isLoading && (
-          <Card className="bg-primary/5 animate-pulse">
-            <CardContent className="p-3">
+          <Card className="bg-primary/5 animate-pulse mr-8">
+            <CardContent className="p-2 md:p-3">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Thinking...</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Thinking...</p>
               </div>
             </CardContent>
           </Card>
@@ -221,30 +226,36 @@ const Chat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 bg-card border-t space-y-2">
+      <div className="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-card border-t shadow-lg space-y-2">
         {isProcessing && (
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="text-xs md:text-sm text-muted-foreground flex items-center gap-2 justify-center">
+            <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
             Processing voice...
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="flex gap-2 max-w-4xl mx-auto">
           <Button
             variant={isRecording ? "destructive" : "outline"}
             size="icon"
             onClick={handleVoiceInput}
             disabled={isProcessing || isLoading}
+            className="shrink-0"
           >
-            {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isRecording ? <MicOff className="w-4 h-4 animate-pulse" /> : <Mic className="w-4 h-4" />}
           </Button>
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Ask about farming, aflatoxin, or crop management..."
+            placeholder="Ask about farming, aflatoxin..."
             onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage()}
-            disabled={isLoading}
+            disabled={isLoading || isRecording || isProcessing}
+            className="flex-1 text-sm md:text-base"
           />
-          <Button onClick={sendMessage} disabled={isLoading || !message.trim()}>
+          <Button 
+            onClick={sendMessage} 
+            disabled={isLoading || !message.trim() || isRecording || isProcessing}
+            className="shrink-0"
+          >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
