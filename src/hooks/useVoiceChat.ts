@@ -41,49 +41,59 @@ export const useVoiceChat = () => {
         return;
       }
 
-      mediaRecorderRef.current.onstop = async () => {
-        setIsRecording(false);
-        setIsProcessing(true);
+      // Stop recording
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      setIsProcessing(true);
 
-        try {
-          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-          const reader = new FileReader();
-
-          reader.onloadend = async () => {
-            const base64Audio = (reader.result as string).split(',')[1];
-
-            const { data, error } = await supabase.functions.invoke('speech-to-text', {
-              body: { audio: base64Audio, language },
-            });
-
-            setIsProcessing(false);
-
-            if (error) {
-              console.error('Speech-to-text error:', error);
-              toast({
-                title: 'Transcription Error',
-                description: 'Failed to transcribe audio. Please try again.',
-                variant: 'destructive',
-              });
-              resolve(null);
-              return;
-            }
-
-            resolve(data.text);
-          };
-
-          reader.readAsDataURL(blob);
-        } catch (error) {
-          console.error('Error processing audio:', error);
+      // Use Web Speech API
+      try {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+          toast({
+            title: 'Not Supported',
+            description: 'Speech recognition is not supported in this browser.',
+            variant: 'destructive',
+          });
           setIsProcessing(false);
           resolve(null);
+          return;
         }
 
-        // Stop all tracks
-        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
-      };
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = language === 'en' ? 'en-US' : language === 'fr' ? 'fr-FR' : language === 'ar' ? 'ar-SA' : 'en-US';
 
-      mediaRecorderRef.current.stop();
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setIsProcessing(false);
+          resolve(transcript);
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          toast({
+            title: 'Transcription Error',
+            description: 'Failed to transcribe audio. Please try again.',
+            variant: 'destructive',
+          });
+          setIsProcessing(false);
+          resolve(null);
+        };
+
+        recognition.onend = () => {
+          setIsProcessing(false);
+        };
+
+        recognition.start();
+      } catch (error) {
+        console.error('Error with speech recognition:', error);
+        setIsProcessing(false);
+        resolve(null);
+      }
     });
   }, [toast]);
 
