@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 type Message = { role: 'user' | 'assistant'; content: string };
 
 const Chat = () => {
+  const cleanText = (text: string) => text.replace(/\*\*/g, '').replace(/\*/g, '');
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -103,11 +104,12 @@ const Chat = () => {
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               assistantMessage += content;
+              const cleanedMessage = cleanText(assistantMessage);
               setMessages(prev => {
                 const newMessages = [...prev];
                 newMessages[newMessages.length - 1] = {
                   role: 'assistant',
-                  content: assistantMessage
+                  content: cleanedMessage
                 };
                 return newMessages;
               });
@@ -121,7 +123,7 @@ const Chat = () => {
 
       // Speak the complete response after streaming is done
       if (assistantMessage) {
-        await speakText(assistantMessage);
+        await speakText(cleanText(assistantMessage));
       }
     } catch (error) {
       console.error('Chat error:', error);
