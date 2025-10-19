@@ -97,16 +97,26 @@ export const useVoiceChat = () => {
     });
   }, [toast]);
 
-  const speakText = useCallback(async (text: string, voice: string = 'alloy') => {
+  const speakText = useCallback(async (text: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, voice },
-      });
+      if (!('speechSynthesis' in window)) {
+        toast({
+          title: 'Not Supported',
+          description: 'Text-to-speech is not supported in this browser.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-      if (error) throw error;
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
 
-      const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-      await audio.play();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      window.speechSynthesis.speak(utterance);
     } catch (error) {
       console.error('Text-to-speech error:', error);
       toast({
