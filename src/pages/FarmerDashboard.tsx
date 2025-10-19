@@ -227,7 +227,7 @@ const FarmerDashboard = () => {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="insights" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-muted/50 h-10 sm:h-12 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/50 h-10 sm:h-12 overflow-x-auto">
             <TabsTrigger value="insights" className="flex flex-col sm:flex-row items-center gap-1 text-xs px-2 py-1 min-w-0">
               <Leaf className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs truncate">Insights</span>
@@ -243,10 +243,6 @@ const FarmerDashboard = () => {
             <TabsTrigger value="tools" className="flex flex-col sm:flex-row items-center gap-1 text-xs px-2 py-1 min-w-0">
               <Scan className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs truncate">Tools</span>
-            </TabsTrigger>
-            <TabsTrigger value="resources" className="flex flex-col sm:flex-row items-center gap-1 text-xs px-2 py-1 min-w-0">
-              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs truncate">Resources</span>
             </TabsTrigger>
           </TabsList>
 
@@ -444,62 +440,63 @@ const FarmerDashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          <TabsContent value="resources" className="space-y-4 sm:space-y-6">
             {/* Resources Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
-                <CardContent 
-                  className="p-4 sm:p-6 text-center"
-                  onClick={() => handleResourceClick('training')}
-                >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-primary/20 transition-colors">
-                    <Leaf className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Training Materials</h3>
-                  <p className="text-xs sm:text-sm text-foreground">Best practices and guidelines for farming</p>
-                </CardContent>
-              </Card>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Resources</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
+                  <CardContent 
+                    className="p-4 sm:p-6 text-center"
+                    onClick={() => handleResourceClick('training')}
+                  >
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-primary/20 transition-colors">
+                      <Leaf className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Training Materials</h3>
+                    <p className="text-xs sm:text-sm text-foreground">Best practices and guidelines for farming</p>
+                  </CardContent>
+                </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
-                <CardContent 
-                  className="p-4 sm:p-6 text-center"
-                  onClick={() => handleResourceClick('market')}
-                >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-success/20 transition-colors">
-                    <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-success" />
-                  </div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Market Information</h3>
-                  <p className="text-xs sm:text-sm text-foreground">Current prices and market trends</p>
-                </CardContent>
-              </Card>
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
+                  <CardContent 
+                    className="p-4 sm:p-6 text-center"
+                    onClick={() => handleResourceClick('market')}
+                  >
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-success/20 transition-colors">
+                      <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-success" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Market Information</h3>
+                    <p className="text-xs sm:text-sm text-foreground">Current prices and market trends</p>
+                  </CardContent>
+                </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
-                <CardContent 
-                  className="p-4 sm:p-6 text-center"
-                  onClick={() => handleResourceClick('support')}
-                >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-info/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-info/20 transition-colors">
-                    <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-info" />
-                  </div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Technical Support</h3>
-                  <p className="text-xs sm:text-sm text-foreground">Get help from agricultural experts</p>
-                </CardContent>
-              </Card>
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
+                  <CardContent 
+                    className="p-4 sm:p-6 text-center"
+                    onClick={() => handleResourceClick('support')}
+                  >
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-info/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-info/20 transition-colors">
+                      <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-info" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Technical Support</h3>
+                    <p className="text-xs sm:text-sm text-foreground">Get help from agricultural experts</p>
+                  </CardContent>
+                </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
-                <CardContent 
-                  className="p-4 sm:p-6 text-center"
-                  onClick={() => handleResourceClick('finance')}
-                >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-warning/20 transition-colors">
-                    <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-warning" />
-                  </div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Financial Services</h3>
-                  <p className="text-xs sm:text-sm text-foreground">Loans, insurance, and subsidies</p>
-                </CardContent>
-              </Card>
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
+                  <CardContent 
+                    className="p-4 sm:p-6 text-center"
+                    onClick={() => handleResourceClick('finance')}
+                  >
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-warning/20 transition-colors">
+                      <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-warning" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Financial Services</h3>
+                    <p className="text-xs sm:text-sm text-foreground">Loans, insurance, and subsidies</p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
