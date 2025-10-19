@@ -444,7 +444,7 @@ const FarmerDashboard = () => {
             {/* Resources Section */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-4">Resources</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
                   <CardContent 
                     className="p-4 sm:p-6 text-center"
@@ -481,19 +481,6 @@ const FarmerDashboard = () => {
                     </div>
                     <h3 className="font-semibold mb-2 text-sm sm:text-base">Technical Support</h3>
                     <p className="text-xs sm:text-sm text-foreground">Get help from agricultural experts</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer group border-border">
-                  <CardContent 
-                    className="p-4 sm:p-6 text-center"
-                    onClick={() => handleResourceClick('finance')}
-                  >
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-warning/20 transition-colors">
-                      <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-warning" />
-                    </div>
-                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Financial Services</h3>
-                    <p className="text-xs sm:text-sm text-foreground">Loans, insurance, and subsidies</p>
                   </CardContent>
                 </Card>
               </div>
