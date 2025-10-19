@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
@@ -46,10 +46,21 @@ const AppContent = () => {
     }
   }, []);
 
-  return (
-    <div className="min-h-screen bg-background pb-16 sm:pb-0">
-      <OfflineIndicator />
-      <BrowserRouter>
+  const RouterContent = () => {
+    const location = useLocation();
+    const hideOnPaths = new Set<string>([
+      '/',
+      '/splash',
+      '/language',
+      '/role-selection',
+      '/privacy-agreement',
+      '/phone-auth',
+      '/privacy'
+    ]);
+    const showChrome = !hideOnPaths.has(location.pathname);
+
+    return (
+      <>
         <Routes>
           <Route path="/" element={<LogoScreen />} />
           <Route path="/language" element={<LanguageSelection />} />
@@ -76,8 +87,17 @@ const AppContent = () => {
           <Route path="/finance" element={<FinancialServices />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <MobileBottomNav />
-        <AdBanner />
+        {showChrome && <MobileBottomNav />}
+        {showChrome && <AdBanner />}
+      </>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-16 sm:pb-0">
+      <OfflineIndicator />
+      <BrowserRouter>
+        <RouterContent />
       </BrowserRouter>
     </div>
   );
