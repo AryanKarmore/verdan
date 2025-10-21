@@ -52,6 +52,7 @@ const AppContent = () => {
       '/',
       '/splash',
       '/language',
+      '/auth',
       '/role-selection',
       '/privacy-agreement',
       '/phone-auth',
@@ -64,6 +65,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<LogoScreen />} />
           <Route path="/language" element={<LanguageSelection />} />
+          <Route path="/auth" element={<PhoneAuth />} />
           <Route path="/role-selection" element={<RoleSelection />} />
           <Route path="/privacy-agreement" element={<PrivacyAgreement />} />
           <Route path="/phone-auth" element={<PhoneAuth />} />
