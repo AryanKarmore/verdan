@@ -1,240 +1,262 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/lib/auth';
-import { t } from '@/lib/i18n';
-import { Wheat } from 'lucide-react';
+import { authService, FarmerUser } from '@/lib/auth';
+import { ttsService } from '@/lib/tts';
+import { Volume2, Wheat } from 'lucide-react';
 
 const PhoneAuth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<FarmerUser | null>(null);
+  const [loading, setLoading] = useState(false);
   
-  // Form state
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('');
+  // Login form state
+  const [loginName, setLoginName] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  
+  // Signup form state
+  const [signupName, setSignupName] = useState('');
+  const [signupPhone, setSignupPhone] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
 
-  const handleSubmit = async () => {
-    if (isLogin) {
-      // Login
-      if (!name.trim() || !pin.trim()) {
+  useEffect(() => {
+    // Check if privacy was accepted
+    const privacyAccepted = localStorage.getItem('privacy-accepted');
+    if (!privacyAccepted) {
+      navigate('/privacy-agreement');
+      return;
+    }
+
+    // Check for existing session on mount
+    const checkAuth = async () => {
+      const currentUser = await authService.checkSession();
+      if (currentUser) {
+        setUser(currentUser);
+        const role = currentUser.role || 'farmer';
+        navigate(`/${role}`);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+
+  const speakText = async (text: string) => {
+    try {
+      await ttsService.speak(text, 'en');
+    } catch (error) {
+      console.log('TTS not available:', error);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!loginName.trim() || !loginPassword.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter both name and password",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('Attempting login with name:', loginName);
+      
+      const { session, error } = await authService.login(loginName.trim(), loginPassword);
+
+      if (error) {
+        console.error('Login Error:', error);
         toast({
           variant: "destructive",
-          title: t('error.generic'),
-          description: t('auth.fillAllFields'),
+          title: "Login Failed",
+          description: error,
         });
         return;
       }
 
-      if (pin.length < 4) {
+      if (session?.user) {
+        console.log('Login successful:', session.user);
+        setUser(session.user);
         toast({
-          variant: "destructive",
-          title: t('error.generic'),
-          description: t('auth.pinMinLength'),
+          title: "Welcome Back!",
+          description: `Welcome ${session.user.full_name}!`,
         });
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const { session, error } = await authService.login(name, pin);
         
-        if (error) {
-          toast({
-            variant: "destructive",
-            title: t('error.generic'),
-            description: error,
-          });
-          return;
-        }
-
-        if (session) {
-          toast({
-            title: t('auth.loginSuccess'),
-            description: `${t('auth.welcomeBack')}, ${session.user?.full_name}!`,
-          });
-          
-          // Navigate to dashboard based on stored role or default to farmer
-          const role = localStorage.getItem('verdan-role') || 'farmer';
-          navigate(`/${role}`);
-        }
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: t('error.generic'),
-          description: error.message || t('error.generic'),
-        });
-      } finally {
-        setIsLoading(false);
+        const role = session.user.role || 'farmer';
+        navigate(`/${role}`);
       }
-    } else {
-      // Sign up
-      if (!name.trim() || !phone.trim() || !pin.trim()) {
+    } catch (error: any) {
+      console.error('Error logging in:', error);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDirectSignup = async () => {
+    if (!signupName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your full name",
+      });
+      return;
+    }
+
+    if (!signupPhone.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your phone number",
+      });
+      return;
+    }
+
+    if (!signupPassword.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please set a password",
+      });
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password must be at least 6 characters",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('Creating account for:', signupName);
+      
+      const { user, error } = await authService.register(
+        signupName.trim(), 
+        signupPhone.trim(), 
+        signupPassword
+      );
+
+      if (error) {
+        console.error('Signup Error:', error);
         toast({
           variant: "destructive",
-          title: t('error.generic'),
-          description: t('auth.fillAllFields'),
+          title: "Signup Failed",
+          description: error,
         });
         return;
       }
 
-      if (pin.length < 4) {
+      if (user) {
+        console.log('Signup successful:', user);
         toast({
-          variant: "destructive",
-          title: t('error.generic'),
-          description: t('auth.pinMinLength'),
+          title: "Success!",
+          description: "Account created successfully! You can now login.",
         });
-        return;
+        
+        // Switch to login tab and prefill name
+        setLoginName(signupName.trim());
+        setLoginPassword('');
       }
+      
+    } catch (error: any) {
+      console.error('Error creating account:', error);
+      toast({
+        variant: "destructive",
+        title: "Signup Failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      setIsLoading(true);
-      try {
-        const { user: newUser, error } = await authService.register(name, phone, pin);
+  const resetForm = () => {
+    setLoginName('');
+    setLoginPassword('');
+    setSignupName('');
+    setSignupPhone('');
+    setSignupPassword('');
+  };
 
-        if (error) {
-          toast({
-            variant: "destructive",
-            title: t('error.generic'),
-            description: error,
-          });
-          return;
-        }
-
-        if (newUser) {
-          toast({
-            title: t('auth.signupSuccess'),
-            description: t('auth.accountCreated'),
-          });
-          
-          // Auto-login after signup
-          const { session, error: loginError } = await authService.login(name, pin);
-          if (!loginError && session) {
-            const role = localStorage.getItem('verdan-role') || 'farmer';
-            navigate(`/${role}`);
-          }
-        }
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: t('error.generic'),
-          description: error.message || t('error.generic'),
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  const handleContinue = () => {
+    // Skip authentication and go directly to the selected role dashboard
+    const role = localStorage.getItem('verdan-role') || 'farmer';
+    
+    switch (role) {
+      case 'farmer':
+        navigate('/farmer');
+        break;
+      case 'buyer':
+        navigate('/buyer');
+        break;
+      case 'government':
+        navigate('/government');
+        break;
+      default:
+        navigate('/farmer');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo and Header */}
-        <div className="text-center space-y-3">
-          <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Wheat className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="text-4xl font-bold text-primary">{t('app.name')}</h1>
-          <p className="text-muted-foreground text-lg">{t('app.tagline')}</p>
+          
+          <h1 className="text-3xl font-bold text-primary mb-2">
+            Welcome to Verdan
+          </h1>
+          
+          <p className="text-muted-foreground text-lg">
+            Professional Agricultural Intelligence Platform
+          </p>
         </div>
 
-        <Card className="p-6 shadow-xl space-y-6">
-          {/* Toggle between Login and Sign Up */}
-          <div className="flex gap-2 p-1 bg-muted rounded-lg">
-            <Button
-              variant={isLogin ? "default" : "ghost"}
-              className="flex-1"
-              onClick={() => {
-                setIsLogin(true);
-                setName('');
-                setPhone('');
-                setPin('');
-              }}
+        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <CardTitle className="text-xl text-foreground">
+              Ready to Get Started!
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Click below to access your dashboard
+            </p>
+          </CardHeader>
+          
+          <CardContent className="text-center">
+            <Button 
+              onClick={handleContinue}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-xl"
+              size="lg"
             >
-              {t('auth.login')}
+              Access Dashboard
             </Button>
-            <Button
-              variant={!isLogin ? "default" : "ghost"}
-              className="flex-1"
-              onClick={() => {
-                setIsLogin(false);
-                setName('');
-                setPhone('');
-                setPin('');
-              }}
-            >
-              {t('auth.signup')}
-            </Button>
-          </div>
-
-          {/* Form Fields */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('auth.name')}</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder={t('auth.enterName')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isLoading}
-              />
+            
+            <div className="mt-8 text-center">
+              <Button
+                variant="link"
+                onClick={() => navigate('/role-selection')}
+                className="text-sm text-muted-foreground hover:text-primary"
+              >
+                ← Back to Role Selection
+              </Button>
             </div>
-
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">{t('auth.phone')}</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+254712345678"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="pin">{t('auth.pin')}</Label>
-              <Input
-                id="pin"
-                type="password"
-                placeholder={t('auth.enterPin')}
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                maxLength={6}
-                disabled={isLoading}
-              />
-              <p className="text-xs text-muted-foreground">{t('auth.pinHelper')}</p>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            onClick={handleSubmit}
-            className="w-full"
-            size="lg"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Loading...' : (isLogin ? t('auth.login') : t('auth.signup'))}
-          </Button>
-
-          {/* Back Link */}
-          <div className="text-center">
-            <Button
-              variant="link"
-              onClick={() => navigate('/language')}
-              className="text-sm text-muted-foreground"
-            >
-              ← {t('action.back')}
-            </Button>
-          </div>
+          </CardContent>
         </Card>
       </div>
     </div>

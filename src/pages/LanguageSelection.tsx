@@ -43,7 +43,7 @@ const LanguageSelection = () => {
 
   const handleContinue = () => {
     localStorage.setItem('verdan-language', selectedLanguage);
-    navigate('/auth');
+    navigate('/role-selection');
   };
 
   return (

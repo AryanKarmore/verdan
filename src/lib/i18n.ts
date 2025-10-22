@@ -66,75 +66,10 @@ export const translations: Translations = {
   },
 
   // Authentication
-  'auth.login': {
-    en: 'Login',
-    sw: 'Ingia',
-    ki: 'Toonya'
-  },
-  'auth.signup': {
-    en: 'Sign Up',
-    sw: 'Jisajili',
-    ki: 'Ĩyandĩkithie'
-  },
-  'auth.name': {
-    en: 'Full Name',
-    sw: 'Jina Kamili',
-    ki: 'Rĩĩtwa Rĩa Mũndũ'
-  },
   'auth.phone': {
-    en: 'Phone Number',
-    sw: 'Nambari ya Simu',
-    ki: 'Nambari ya Thimu'
-  },
-  'auth.pin': {
-    en: 'PIN',
-    sw: 'Nambari ya Siri',
-    ki: 'Namba ya Hitho'
-  },
-  'auth.enterName': {
-    en: 'Enter your full name',
-    sw: 'Ingiza jina lako kamili',
-    ki: 'Ĩkĩra rĩĩtwa rĩaku rĩothe'
-  },
-  'auth.enterPin': {
-    en: 'Enter your PIN',
-    sw: 'Ingiza nambari yako ya siri',
-    ki: 'Ĩkĩra namba yaku ya hitho'
-  },
-  'auth.pinHelper': {
-    en: 'Minimum 4 digits',
-    sw: 'Angalau tarakimu 4',
-    ki: 'Namba cia onanedu nĩ 4'
-  },
-  'auth.loginSuccess': {
-    en: 'Login Successful',
-    sw: 'Umeingia Kwa Mafanikio',
-    ki: 'Ũtoonyire Wega'
-  },
-  'auth.signupSuccess': {
-    en: 'Account Created',
-    sw: 'Akaunti Imeundwa',
-    ki: 'Akaunti Nĩyũmbĩtwo'
-  },
-  'auth.welcomeBack': {
-    en: 'Welcome back',
-    sw: 'Karibu tena',
-    ki: 'Wĩyũ karingana'
-  },
-  'auth.accountCreated': {
-    en: 'Your account has been created successfully!',
-    sw: 'Akaunti yako imeundwa kwa mafanikio!',
-    ki: 'Akaunti yaku nĩyũmbĩtwo wega!'
-  },
-  'auth.fillAllFields': {
-    en: 'Please fill in all fields',
-    sw: 'Tafadhali jaza sehemu zote',
-    ki: 'Tafadhali iyũria indo ciothe'
-  },
-  'auth.pinMinLength': {
-    en: 'PIN must be at least 4 digits',
-    sw: 'Nambari ya siri lazima iwe na angalau tarakimu 4',
-    ki: 'Namba ya hitho ĩkĩrĩrĩirie kũiyũra namba cia onanedu 4'
+    en: 'Enter Phone Number',
+    sw: 'Ingiza Nambari ya Simu',
+    ki: 'Ĩkĩra Nambari ya Thimu'
   },
   'auth.otp': {
     en: 'Enter Verification Code',
